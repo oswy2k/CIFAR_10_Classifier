@@ -482,7 +482,6 @@ def Get_integrated_gradient(
 def Get_occlusion(
     model: any,
     dataloader: DataLoader,
-    steps: int = 200,
     device: torch.device = torch.device("cuda"),
 ) -> None:
     """
@@ -490,7 +489,6 @@ def Get_occlusion(
     ----------
     model : any
     dataloader : Dataloader
-    steps : int = 200 , optional
     device : torch.device = torch.device("cpu") , optional
 
     Returns
