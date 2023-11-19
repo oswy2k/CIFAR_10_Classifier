@@ -8,9 +8,15 @@ import torchvision.datasets as datasets
 import torchvision.transforms as T
 import numpy as np
 
+import captum
+from captum.attr import IntegratedGradients, Occlusion, LayerGradCam, LayerAttribution
+from captum.attr import visualization as viz
+
 # System Libraries #
 import time
 from itertools import *
+from matPlotLib_Helpers import *
+from dataset_Helpers import *
 
 
 # Calculate Accuracy of Model #
@@ -381,3 +387,140 @@ def Load_model(model_Class: any, path: str = "./") -> None:
 
     model_Class.load_state_dict(torch.load(path))
     model_Class.eval()
+
+
+# Helper for getting model weights #
+def Get_convolutional_layer_weights(
+    model: any,
+    layer_index: int,
+    multiple_channels: bool = True,
+    multiple_channels_index: int = 0,
+    columns: int = 10,
+) -> None:
+    """
+    Parameters
+    ----------
+    model : any
+    layer_index : int
+    multiple_channels : bool = True , optional
+    multiple_channels_index : bool = 0 , optional
+
+    Returns
+    ----------
+    None.
+
+    Notes
+    ----------
+    Function for obtaining model weights for a given layer index.
+    """
+
+    # Extract layer from models to get its features #
+    try:
+        weight_tensor = model.state_dict()[
+            "convolutional_features." + str(layer_index) + ".weight"
+        ]
+    except:
+        print("Cant get weights from non convolutional layer.")
+        return
+
+    if multiple_channels:
+        Plot_filters_multiple_channels(
+            weight_tensor.to("cpu"), kernel=multiple_channels_index, columns=columns
+        )
+    else:
+        # Check for single channel kernel #
+        if weight_tensor.shape[1] == 3:
+            # kernels depth * number of kernels
+            Plot_filters_single_channel(
+                np.array(weight_tensor.to("cpu").numpy(), np.float32), columns=columns
+            )
+
+        else:
+            print("Cant get weights from multiple layers without multiple channels.")
+
+
+def Get_integrated_gradient(
+    model: any,
+    dataloader: DataLoader,
+    steps: int = 200,
+    device: torch.device = torch.device("cuda"),
+) -> None:
+    """
+    Parameters
+    ----------
+    model : any
+    dataloader : Dataloader
+    steps : int = 200 , optional
+    device : torch.device = torch.device("cpu") , optional
+
+    Returns
+    ----------
+    None.
+
+    Notes
+    ----------
+    Function for obtaining integrated gradients for a given tensor.
+    """
+
+    # Get random image, index and label #
+    tensor, index, label = Get_item(dataloader, device)
+
+    # Create integrated gradient object #
+    integrated_gradients = IntegratedGradients(model)
+
+    attrib_image = integrated_gradients.attribute(tensor, target=index, n_steps=steps)
+
+    # Convert tensor to numpy array for plotting#
+    image = tensor.to("cpu").numpy()[0]
+
+    # Specify target label #
+    print("Target label: " + label)
+
+    Plot_tensor_array(attrib_image, image, "Integrated Gradient")
+
+
+def Get_occlusion(
+    model: any,
+    dataloader: DataLoader,
+    steps: int = 200,
+    device: torch.device = torch.device("cuda"),
+) -> None:
+    """
+    Parameters
+    ----------
+    model : any
+    dataloader : Dataloader
+    steps : int = 200 , optional
+    device : torch.device = torch.device("cpu") , optional
+
+    Returns
+    ----------
+    None.
+
+    Notes
+    ----------
+    Function for obtaining integrated gradients for a given tensor.
+    """
+
+    # Get random image, index and label #
+    tensor, index, label = Get_item(dataloader, device)
+
+    # Create integrated gradient object #
+    occlusion = Occlusion(model)
+
+    attrib_image = occlusion.attribute(
+        tensor,
+        target=index,
+        strides=(3, 8, 8),
+        sliding_window_shapes=(3, 15, 15),
+        baselines=0,
+    )
+
+    # Convert tensor to numpy array for plotting#
+    image = tensor.to("cpu").numpy()[0]
+
+    # Specify target label #
+    print("Target label: " + label)
+
+    Plot_tensor_array(tensor - attrib_image, image, "Negative Occlusion")
+    Plot_tensor_array(tensor + attrib_image, image, "Positive Occlusion")

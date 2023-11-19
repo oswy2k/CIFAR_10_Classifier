@@ -166,6 +166,7 @@ def Plot_accuracy_epochs(
     plt.show()
 
 
+# Plots the confussion matrix of the trained model #
 def Plot_confusion_matrix(matrix: any, labels: [], text_show: str) -> None:
     """
     Parameters
@@ -200,4 +201,157 @@ def Plot_confusion_matrix(matrix: any, labels: [], text_show: str) -> None:
 
     ax.set_title(text_show)
     fig.tight_layout()
+    plt.show()
+
+
+# used for plotting the weights of a single layer convolutional layer #
+def Plot_filters_single_channel(numpy_Array: np.array, columns: int = 10) -> None:
+    """
+    Parameters
+    ----------
+    numpy_Array : np.array
+    columns : int = 10, optional
+
+    Returns
+    ----------
+    None
+
+    Notes
+    ----------
+    Plots the weight of a single channel input convolutional layer.
+    """
+
+    # Set number of plots to do per line #
+    number_Images = numpy_Array.shape[0] * numpy_Array.shape[1]
+
+    rows = 1 + number_Images // columns
+
+    # Set figure size #
+    fig = plt.figure(figsize=(columns, rows))
+
+    # Counter for subplots #
+    counter = 0
+
+    # Loop for kernels for plotting
+    for i in range(numpy_Array.shape[0]):
+        for j in range(numpy_Array.shape[1]):
+            counter += 1
+
+            # Add subplot to figure #
+            ax1 = fig.add_subplot(rows, columns, counter)
+
+            # Take image from kernel #
+            npimg = np.array(numpy_Array[i, j], np.float32)
+            npimg = (npimg - np.mean(npimg)) / np.std(npimg)
+            npimg = np.minimum(1, np.maximum(0, (npimg + 0.5)))
+
+            # Show image with labels to identify kernel #
+            ax1.imshow(npimg)
+            ax1.set_title(str(i) + "," + str(j))
+            ax1.axis("off")
+            ax1.set_xticklabels([])
+            ax1.set_yticklabels([])
+
+    plt.tight_layout()
+    plt.show()
+
+
+# Used for plotting the weights of a multiple layer convolutional layer #
+def Plot_filters_multiple_channels(
+    tensor: torch.Tensor, kernel: int = 0, columns: int = 10
+) -> None:
+    """
+    Parameters
+    ----------
+    tensor : torch.Tensor
+    kernel : int = 0, optional
+    columns : int = 10, optional
+
+    Returns
+    ----------
+    None
+
+    Notes
+    ----------
+    Plots the weights of a multiple chanel input convolutional layer.
+    """
+
+    # get the number of kernals
+    number_kernels = tensor.shape[0]
+
+    # Set row size #
+    rows = number_kernels
+
+    # Set the figure size #
+    fig = plt.figure(figsize=(columns, rows))
+
+    fig.suptitle("Kernels :" + str(kernel))
+
+    # Loop through all kernels #
+    for i in range(tensor.shape[0]):
+        # Create subplot #
+        ax1 = fig.add_subplot(rows, columns, i + 1)
+
+        # Convert tensor to numpy array #
+        image = np.array(tensor[i].numpy(), np.float32)
+
+        # Normalize the numpy array #
+        image = (image - np.mean(image)) / np.std(image)
+        image = np.minimum(1, np.maximum(0, (image + 0.5)))
+        # image = image.transpose((1, 2, 0))
+
+        ax1.imshow(image[kernel])
+        ax1.axis("off")
+        ax1.set_title(str(i))
+        ax1.set_xticklabels([])
+        ax1.set_yticklabels([])
+
+    plt.tight_layout()
+    plt.show()
+
+
+# Used for plotting the weights of a multiple layer convolutional layer #
+def Plot_tensor_array(tensor: torch.Tensor, image: np.array, label: str = "") -> None:
+    """
+    Parameters
+    ----------
+    tensor : torch.Tensor
+    image : np.array
+    label : str = "" , optional
+
+    Returns
+    ----------
+    None
+
+    Notes
+    ----------
+    Plots tsidde to side comparison of a tensor and an image.
+    """
+
+    # Modify bounds for tensor image #
+    tensor_image = tensor[0].cpu()
+    tensor_image = tensor_image - tensor_image.min()
+    tensor_image /= tensor_image.max()
+
+    # Set axis #
+    fig = plt.figure(figsize=(12, 12))
+    ax1 = fig.add_subplot(3, 2, 1)
+
+    # Plot Image #
+    image = np.transpose(image, [1, 2, 0])
+
+    ax1.imshow(image)
+    ax1.set_title("Orginal Image")
+    ax1.axis("off")
+    ax1.set_xticklabels([])
+    ax1.set_yticklabels([])
+
+    # Plot Tensor #
+    ax1 = fig.add_subplot(3, 1, 1)
+    ax1.set_title(label)
+    ax1.imshow(np.transpose(tensor_image, [1, 2, 0]))
+    ax1.axis("off")
+    ax1.set_xticklabels([])
+    ax1.set_yticklabels([])
+
     plt.show()

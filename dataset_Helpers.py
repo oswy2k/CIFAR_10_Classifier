@@ -7,6 +7,8 @@ from torch.utils.data import sampler
 import torchvision.datasets as datasets
 import torchvision.transforms as T
 
+import numpy as np
+
 # Main dataset Configuration #
 DATA_PATH = "./Cifar10_Data"
 NUM_TRAIN = 50000
@@ -96,3 +98,33 @@ def Verify_data(*argv) -> None:
 
     for arguments in argv:
         print(arguments)
+
+
+# Get random image and label from dataloader #
+def Get_item(dataloader: DataLoader, device: torch.device) -> [torch.Tensor, int, str]:
+    """
+    Parameters
+    ----------
+    dataloader : DataLoader
+
+    Returns
+    ----------
+    [torch.Tensor, int, str]
+
+    Notes
+    ----------
+    Get a random image, label and index from the dataloader given.
+    """
+
+    # Get random index #
+    random_Index = np.random.randint(len(dataloader))
+
+    # Get random image and label from dataloader #
+    data_Classes = dataloader.dataset.classes
+
+    # Get Random image and Label #
+    label = data_Classes[dataloader.dataset[random_Index][1]]
+    index = data_Classes.index(data_Classes[dataloader.dataset[random_Index][1]])
+    image = torch.tensor(np.array([dataloader.dataset[random_Index][0]])).to(device)
+
+    return [image, index, label]

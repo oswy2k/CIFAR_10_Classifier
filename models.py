@@ -84,22 +84,25 @@ class CNN_custom(nn.Module):
         super().__init__()
         # Convolutional Layers Features #
         self.convolutional_features = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=3),
+            nn.Conv2d(3, 16, kernel_size=5, stride=1, padding=3),   # Input Layer, has three channels to convert rgb to different kernels, its size its bigger to have more features in it,
+                                                                    # also its output is upscaled by the padding to mantain most of the features#
+            nn.ReLU(inplace=True),                                  # Activation function #   
+            nn.MaxPool2d(kernel_size=3, stride=1),                  # Max pooling layer, to reduce the size of the image, and gather characteristics for next convolutional layer#
+
+            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=3),  # Intermediate layer 1, reduced kerneel size for more precise features #
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=1),
-            nn.Conv2d(16, 32, kernel_size=3, stride=2, padding=3),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=1),
-            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=3),
+
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=3),  # Intermediate layer 2, mantains kernel size and upscale number of kernels for average pooling fusing #
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=3, stride=2),
         )
 
         # Average Pooling Features #
-        self.average_pooling = nn.AdaptiveAvgPool2d((8, 8))
+        self.average_pooling = nn.AdaptiveAvgPool2d((8, 8))         # Fuse all characteristics in 8x8 image for linearizing and classifiying #
 
         # Linear Layers Classification Features #
-        self.classifiying_features = nn.Sequential(
+        self.classifiying_features = nn.Sequential(                 # Linear layers to classify the image #
             nn.Dropout(0.1),
             nn.Linear(8 * 8 * 64, 256),
             nn.ReLU(inplace=True),
