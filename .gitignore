@@ -1,0 +1,6 @@
+# Ignore this folders
+.ipynb_checkpoints
+
+__pycache__
+
+Cifar10_Data
